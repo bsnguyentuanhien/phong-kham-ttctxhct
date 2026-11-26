@@ -521,7 +521,8 @@
                         <span class="font-bold text-blue" style="font-size:12px;">&#128101; Chọn nhanh Cán bộ / Nhân viên (<span id="login-staff-count">0</span>):</span>
                         <span style="font-size:11px;color:#475569;">Cuộn để tìm tên</span>
                     </div>
-                    <div id="extra-users-quick-list" class="staff-login-scroll" style="display:flex;flex-direction:column;gap:5px;"></div>
+                   <input type="text" id="quick-staff-search" oninput="filterQuickStaffList(this.value)" placeholder="🔍 Gõ tên hoặc mã NV để tìm nhanh..." class="tc-input w-full" style="height:30px;margin-bottom:6px;background:#fff;border:1px solid #93c5fd;font-size:12px;">
+ <div id="extra-users-quick-list" class="staff-login-scroll" style="display:flex;flex-direction:column;gap:5px;"></div>
                 </div>
 
                 <form onsubmit="handleLogin(event)" style="display:flex;flex-direction:column;gap:10px;">
@@ -2444,12 +2445,14 @@
                 const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
                 if (raw) return JSON.parse(raw);
             } catch (e) {}
-            return {
-                enabled: false,
-                url: '',
-                roomKey: 'ttctxh_cantho_yt_phcn',
-                authToken: ''
-            };
+             
+    return {
+        enabled: true,
+        url: 'https://phongkham-ttctxh-default-rtdb.asia-southeast1.firebasedatabase.app',
+        roomKey: 'ttctxh_cantho_yt_phcn',
+        authToken: ''
+    };
+
         }
 
         function saveCloudConfig(cfg = cloudConfig) {
@@ -5363,6 +5366,15 @@
             const el = document.getElementById('status-clock');
             if (el) el.textContent = new Date().toLocaleString('vi-VN');
         }
+function filterQuickStaffList(keyword) {
+        const q = (keyword || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const list = document.getElementById('extra-users-quick-list');
+        if (!list) return;
+        Array.from(list.children).forEach(item => {
+            const text = (item.textContent || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            item.style.display = text.includes(q) ? '' : 'none';
+        });
+    }
 
         // Khởi chạy
         renderLoginExtraUsers();
