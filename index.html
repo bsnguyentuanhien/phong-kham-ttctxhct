@@ -2599,7 +2599,8 @@
                 if (remoteData && Array.isArray(remoteData.users) && Array.isArray(remoteData.patients)) {
                     const localTime = db.updatedAt || 0;
                     const remoteTime = remoteData.updatedAt || 0;
-                    if (notify || remoteTime > localTime) {
+                    const isFreshEmptyLocal = (db.users || []).length <= 1 && (db.patients || []).length === 0;
+if (notify || remoteTime > localTime || isFreshEmptyLocal)  {
                         db = remoteData;
                         if (!Array.isArray(db.exams)) db.exams = [];
                         if (!Array.isArray(db.nursingCareRecords)) db.nursingCareRecords = [];
