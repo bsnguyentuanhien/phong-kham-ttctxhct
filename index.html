@@ -2596,12 +2596,13 @@
                 const resp = await fetch(endpoint);
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                 const remoteData = await resp.json();
-                if (remoteData && Array.isArray(remoteData.users) && Array.isArray(remoteData.patients)) {
+                if (remoteData && Array.isArray(remoteData.users) ) {
                     const localTime = db.updatedAt || 0;
                     const remoteTime = remoteData.updatedAt || 0;
                     const isFreshEmptyLocal = (db.users || []).length <= 1 && (db.patients || []).length === 0;
 if (notify || remoteTime > localTime || isFreshEmptyLocal)  {
                         db = remoteData;
+if (!Array.isArray(db.patients)) db.patients = [];
                         if (!Array.isArray(db.exams)) db.exams = [];
                         if (!Array.isArray(db.nursingCareRecords)) db.nursingCareRecords = [];
                         if (!Array.isArray(db.treatmentRecords)) db.treatmentRecords = [];
