@@ -477,20 +477,32 @@
             font-weight: 600;
         }
 
-        /* ==================== CHẾ ĐỘ IN CHUẨN A4 / A5 ==================== */
-        @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area {
-                position: fixed;
-                left: 0;
-                top: 0;
-                width: 100%;
-                background: #ffffff !important;
-                padding: 10mm !important;
-                margin: 0 !important;
-            }
+        /* ================== CHẾ ĐỘ IN CHUẨN A4 / A5 (ÉP GỌN 1 TỜ) ================== */
+    @media print {
+        @page {
+            size: A4 portrait;
+            margin: 6mm 8mm 6mm 8mm !important;
         }
+        body * { visibility: hidden; }
+        #print-area, #print-area * { visibility: visible; }
+        #print-area {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: #ffffff !important;
+            padding: 4mm !important;
+            margin: 0 !important;
+            zoom: 85% !important;
+        }
+        #print-area table, #print-area tr, #print-area td, #print-area th, #print-area p, #print-area div {
+            line-height: 1.2 !important;
+        }
+        #print-area td, #print-area th {
+            padding-top: 2px !important;
+            padding-bottom: 2px !important;
+        }
+    }
     </style>
 </head>
 <body>
@@ -2908,10 +2920,17 @@ if (!Array.isArray(db.patients)) db.patients = [];
                 return null;
             }
             const id = document.getElementById('pt-id').value;
+const oldPt = id ? db.patients.find(p => p.id === id) : null;
+    if (oldPt && currentUser.role !== 'Admin' && oldPt.createdBy && oldPt.createdBy !== currentUser.username) {
+        showToast('Bạn không có quyền sửa hồ sơ bệnh nhân của ' + (oldPt.createdByName || oldPt.createdBy) + '!', true);
+        return null;
+    }
             const wardVal = document.getElementById('pt-ward').value.trim() || 'Nội trú Trung tâm CTXH TP. Cần Thơ';
             const addrVal = document.getElementById('pt-address').value.trim() || 'Khu chăm sóc nội trú - Trung tâm CTXH';
-            const pt = {
-                id: id || 'p_' + Date.now(),
+            const pt = {createdBy: oldPt ? (oldPt.createdBy || currentUser.username) : currentUser.username,
+        createdByName: oldPt ? (oldPt.createdByName || currentUser.fullname) : currentUser.fullname,
+        createdAt: oldPt ? (oldPt.createdAt || new Date().toISOString()) : new Date().toISOString()
+                ,id: id || 'p_' + Date.now(),
                 code: document.getElementById('pt-code').value || generatePatientCode(),
                 name: nameVal,
                 gender: document.getElementById('pt-gender').value,
@@ -3023,20 +3042,23 @@ if (!Array.isArray(db.patients)) db.patients = [];
         }
 
         function deletePatientById(id) {
-            if (!hasPerm('editPt')) { showToast('Tài khoản của bạn chưa được cấp quyền Xóa hồ sơ bệnh nhân!', true); return; }
-            const p = db.patients.find(x => x.id === id);
-            if (!p) return;
-            if (!confirm(`Bạn có chắc chắn muốn XÓA bệnh nhân "${p.name}" (Mã: ${p.code}) khỏi danh sách không?`)) return;
-            db.patients = db.patients.filter(item => item.id !== id);
-            saveDatabase();
-            if (selectedPatientId === id) {
-                resetPatientForm();
-            } else {
-                renderPatientsTable();
-            }
-            showToast(`Đã xóa bệnh nhân ${p.name}!`);
-        }
-
+    if (!hasPerm('editPt')) { showToast('Tài khoản của bạn chưa được cấp quyền Xóa hồ sơ bệnh nhân!', true); return; }
+    const p = db.patients.find(x => x.id === id);
+    if (!p) return;
+    if (currentUser.role !== 'Admin' && p.createdBy && p.createdBy !== currentUser.username) {
+        showToast(`Bạn không có quyền xóa hồ sơ bệnh nhân của "${p.createdByName || p.createdBy}"!`, true);
+        return;
+    }
+    if (!confirm(`Bạn có chắc chắn muốn XÓA bệnh nhân "${p.name}" (Mã: ${p.code}) khỏi danh sách không?`)) return;
+    db.patients = db.patients.filter(item => item.id !== id);
+    saveDatabase();
+    if (selectedPatientId === id) {
+        resetPatientForm();
+    } else {
+        renderPatientsTable();
+    }
+    showToast(`Đã xóa bệnh nhân ${p.name}!`);
+}
         function deleteSelectedPatient() {
             if (!selectedPatientId) { showToast('Vui lòng chọn bệnh nhân trước!', true); return; }
             deletePatientById(selectedPatientId);
