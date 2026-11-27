@@ -3875,6 +3875,13 @@ const oldPt = id ? db.patients.find(p => p.id === id) : null;
                 lastEditedBy: idx !== -1 ? `${currentUser.fullname} (${formatDateTime(new Date().toISOString())})` : ''
             };
 
+if (idx !== -1 && currentUser.role !== 'Admin') {
+        const oldCreator = db.exams[idx].createdBy;
+        if (oldCreator && oldCreator !== currentUser.fullname && oldCreator !== currentUser.username) {
+            showToast(`Bạn không có quyền sửa phiếu khám của "${oldCreator}"!`, true);
+            return null;
+        }
+    }
             if (idx === -1) {
                 currentPrescriptions.forEach(pr => {
                     const inv = db.inventory.find(i => i.id === pr.itemId);
@@ -4429,8 +4436,9 @@ const oldPt = id ? db.patients.find(p => p.id === id) : null;
                 datetime: document.getElementById('nc-datetime').value,
                 condition: cond,
                 action: act,
-                nurseName: document.getElementById('nc-nurse-name').value.trim() || currentUser.fullname
-            });
+                nurseName: document.getElementById('nc-nurse-name').value.trim() || currentUser.fullname,
+        createdBy: currentUser.username
+    });
             saveDatabase();
             renderNursingCareTable();
             document.getElementById('nc-action').value = '';
@@ -4438,16 +4446,18 @@ const oldPt = id ? db.patients.find(p => p.id === id) : null;
         }
 
         function deleteNursingCareEntry(id) {
-            if (!canModifyExamHistory()) {
-                showToast('BỊ TỪ CHỐI: Chỉ Admin và Lãnh đạo phòng mới có quyền xóa dòng Phiếu chăm sóc!', true);
-                return;
-            }
-            if (!confirm('Xác nhận xóa dòng ghi nhận chăm sóc điều dưỡng này?')) return;
-            db.nursingCareRecords = db.nursingCareRecords.filter(r => r.id !== id);
-            saveDatabase();
-            renderNursingCareTable();
-            showToast('Đã xóa dòng ghi nhận chăm sóc.');
-        }
+    const item = (db.nursingCareRecords || []).find(r => r.id === id);
+    if (!item) return;
+    if (currentUser.role !== 'Admin' && item.createdBy && item.createdBy !== currentUser.username && item.nurseName !== currentUser.fullname) {
+        showToast(`BỊ TỪ CHỐI: Bạn không có quyền xóa Phiếu chăm sóc của "${item.nurseName || item.createdBy}"!`, true);
+        return;
+    }
+    if (!confirm('Xác nhận xóa dòng ghi nhận chăm sóc điều dưỡng này?')) return;
+    db.nursingCareRecords = (db.nursingCareRecords || []).filter(r => r.id !== id);
+    saveDatabase();
+    renderNursingCareTable();
+    showToast('Đã xóa dòng ghi nhận chăm sóc.');
+}
 
         function renderNursingCareTable() {
             const ptId = document.getElementById('nc-patient-select').value;
@@ -4701,7 +4711,8 @@ const oldPt = id ? db.patients.find(p => p.id === id) : null;
                 datetime: document.getElementById('ts-datetime').value,
                 progress: progress,
                 orders: orders,
-                signer: document.getElementById('ts-signer').value.trim() || currentUser.fullname
+                signer: document.getElementById('ts-signer').value.trim() || currentUser.fullname,
+        createdBy: currentUser.username
             });
             saveDatabase();
             renderTreatmentTable();
@@ -4711,16 +4722,18 @@ const oldPt = id ? db.patients.find(p => p.id === id) : null;
         }
 
         function deleteTreatmentEntry(id) {
-            if (!canModifyExamHistory()) {
-                showToast('BỊ TỪ CHỐI: Chỉ Admin và Lãnh đạo phòng mới có quyền xóa Diễn tiến / Y lệnh điều trị!', true);
-                return;
-            }
-            if (!confirm('Xác nhận xóa dòng Diễn tiến / Y lệnh này?')) return;
-            db.treatmentRecords = (db.treatmentRecords || []).filter(r => r.id !== id);
-            saveDatabase();
-            renderTreatmentTable();
-            showToast('Đã xóa dòng Diễn tiến / Y lệnh.');
-        }
+    const item = (db.treatmentRecords || []).find(r => r.id === id);
+    if (!item) return;
+    if (currentUser.role !== 'Admin' && item.createdBy && item.createdBy !== currentUser.username && item.signer !== currentUser.fullname) {
+        showToast(`BỊ TỪ CHỐI: Bạn không có quyền xóa Y lệnh của "${item.signer || item.createdBy}"!`, true);
+        return;
+    }
+    if (!confirm('Xác nhận xóa dòng Diễn tiến / Y lệnh này?')) return;
+    db.treatmentRecords = (db.treatmentRecords || []).filter(r => r.id !== id);
+    saveDatabase();
+    renderTreatmentTable();
+    showToast('Đã xóa dòng Diễn tiến / Y lệnh.');
+}
 
         function renderTreatmentTable() {
             const ptId = document.getElementById('ts-patient-select').value;
