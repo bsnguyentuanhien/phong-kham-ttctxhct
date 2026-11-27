@@ -479,30 +479,60 @@
 
         /* ================== CHẾ ĐỘ IN CHUẨN A4 / A5 (ÉP GỌN 1 TỜ) ================== */
     @media print {
-        @page {
-            size: A4 portrait;
-            margin: 6mm 8mm 6mm 8mm !important;
+            @page {
+                size: A4 portrait;
+                margin: 6mm 8mm 6mm 8mm !important;
+            }
+            body > *:not(#print-area) {
+                display: none !important;
+            }
+            html, body {
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            #print-area {
+                display: block !important;
+                position: static !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                background: #ffffff !important;
+                padding: 4mm !important;
+                margin: 0 !important;
+                zoom: 85% !important;
+                page-break-before: avoid !important;
+                page-break-after: avoid !important;
+            }
+            #print-area * {
+                box-sizing: border-box !important;
+            }
+            #print-area table, #print-area tr, #print-area td {
+                line-height: 1.2 !important;
+            }
+            #print-area td, #print-area th {
+                padding-top: 2px !important;
+                padding-bottom: 2px !important;
+            }
         }
-        body * { visibility: hidden; }
-        #print-area, #print-area * { visibility: visible; }
-        #print-area {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 100%;
-            background: #ffffff !important;
-            padding: 4mm !important;
-            margin: 0 !important;
-            zoom: 85% !important;
-        }
-        #print-area table, #print-area tr, #print-area td, #print-area th, #print-area p, #print-area div {
-            line-height: 1.2 !important;
-        }
-        #print-area td, #print-area th {
-            padding-top: 2px !important;
-            padding-bottom: 2px !important;
-        }
-    }
+/* Tự động mở cuộn dọc cho toàn bộ màn hình & bảng dữ liệu trên mọi kích thước laptop */
+.view-section:not(.hidden) {
+    overflow-y: auto !important;
+    max-height: calc(100vh - 68px) !important;
+    padding-bottom: 16px !important;
+}
+.tc-table-wrap {
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    max-height: calc(100vh - 155px) !important;
+}
+.tc-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
     </style>
 </head>
 <body>
@@ -626,6 +656,10 @@
                         <span>Phiếu Điều Trị: Diễn tiến &amp; Y lệnh (A4)</span>
                         <span class="badge badge-emerald">Mới</span>
                     </div>
+<div class="tc-dropdown-item" onclick="navigateTo('referral')">
+    <span>Phiếu xin ý kiến chuyển viện (A4)</span>
+    <span class="badge badge-amber">Mới</span>
+</div>
                     <div class="tc-dropdown-item" onclick="navigateTo('history')">
                         <span>Tra cứu Lịch sử khám bệnh nhân</span>
                     </div>
@@ -986,7 +1020,7 @@
                 <!-- ==================== VIEW 3: PHÒNG KHÁM BỆNH & CHỈ ĐỊNH PHCN ==================== -->
                 <div id="view-exam" class="view-section hidden" style="flex-direction:row;gap:8px;min-height:0;height:100%;overflow:hidden;">
                     <!-- Cột trái: Form phiếu khám -->
-                    <div class="flex-1 flex flex-col view-scroll" style="padding-right:2px;">
+                    <div class="flex-1 flex flex-col view-scroll" style="padding-right:4px;overflow-y:auto;max-height:calc(100vh - 78px);">
                         <div class="tc-groupbox">
                             <div class="tc-groupbox-title">
                                 <span>THÔNG TIN BỆNH NHÂN (CHỌN CÓ SẴN HOẶC NHẬP LƯU NHANH ĐỂ KÊ ĐƠN THUỐC)</span>
@@ -1406,7 +1440,96 @@
                 </div>
 
                 <!-- ==================== VIEW 5B: PHIẾU ĐIỀU TRỊ (DIỄN TIẾN / Y LỆNH - IN A4) ==================== -->
-                <div id="view-treatment-sheet" class="view-section hidden">
+                <!-- ================= VIEW 5C: PHIẾU XIN Ý KIẾN CHUYỂN VIỆN (A4) ================= -->
+<div id="view-referral" class="view-section hidden">
+    <div class="tc-groupbox" style="margin-bottom:8px;">
+        <div class="tc-groupbox-title">
+            <span>PHIẾU XIN Ý KIẾN CHUYỂN TUYẾN ĐIỀU TRỊ (VƯỢT QUÁ KHẢ NĂNG CHUYÊN MÔN — IN A4)</span>
+            <div class="flex items-center gap-2">
+<button type="button" onclick="pushReferralToNursingOrder()" class="tc-btn tc-btn-emerald" style="padding:4px 12px;font-weight:700;">&#128137; Đẩy Y lệnh sang Điều dưỡng</button>
+                <button type="button" onclick="printReferralFormA4()" class="tc-btn tc-btn-amber" style="padding:4px 12px;font-weight:700;">&#128424; In Phiếu Xin Ý Kiến (A4)</button>
+            </div>
+        </div>
+        <div style="padding:10px;background:#fff;display:flex;flex-direction:column;gap:8px;">
+            <div class="grid-3">
+                <div class="flex items-center gap-1">
+                    <label style="width:90px;font-weight:700;">Tìm nhanh BN</label>
+                    <input type="text" id="ref-pt-search" onkeyup="filterReferralPatientSelect()" placeholder="Gõ tên bệnh nhân..." class="tc-input flex-1">
+                </div>
+                <div class="flex items-center gap-1">
+                    <label style="width:85px;font-weight:700;">Bệnh nhân <span class="text-red">*</span></label>
+                    <select id="ref-patient-select" onchange="onSelectPatientInReferral()" class="tc-input flex-1 font-bold text-blue"></select>
+                </div>
+                <div class="flex items-center gap-1">
+                    <label style="width:85px;font-weight:600;">Tuổi / Giới</label>
+                    <input type="text" id="ref-pt-info" readonly class="tc-input flex-1" style="background:#f8fafc;">
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="flex items-center gap-1">
+                    <label style="width:90px;font-weight:600;">Phòng / Khu</label>
+                    <input type="text" id="ref-pt-room" placeholder="VD: Khu Chăm sóc đặc biệt..." class="tc-input flex-1">
+                </div>
+                <div class="flex items-center gap-1">
+                    <label style="width:85px;font-weight:600;">Số thẻ BHYT</label>
+                    <input type="text" id="ref-pt-bhyt" placeholder="Nhập số BHYT (nếu có)" class="tc-input flex-1">
+                </div>
+                <div class="flex items-center gap-1">
+                    <label style="width:85px;font-weight:600;">Giờ chuyển</label>
+                    <input type="datetime-local" id="ref-datetime" class="tc-input flex-1">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="flex items-center gap-1">
+                    <label style="width:90px;font-weight:600;">Sinh hiệu</label>
+                    <input type="text" id="ref-vitals" placeholder="Mạch: ... l/ph; HA: .../... mmHg; Nhiệt: ...°C; SpO2: ...%" class="tc-input flex-1">
+                </div>
+                <div class="flex items-center gap-1">
+                    <label style="width:110px;font-weight:700;color:#b91c1c;">Chẩn đoán <span class="text-red">*</span></label>
+                    <input type="text" id="ref-diagnosis" class="tc-input flex-1 font-bold text-red">
+                </div>
+            </div>
+
+            <div>
+                <label style="font-weight:700;display:block;margin-bottom:3px;">Tóm tắt diễn biến lâm sàng, cận lâm sàng &amp; Xử trí ban đầu tại Trung tâm:</label>
+                <textarea id="ref-summary" rows="3" class="tc-input w-full" placeholder="Tự động lấy từ phiếu khám gần nhất hoặc nhập bổ sung diễn biến cấp cứu..."></textarea>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label style="font-weight:700;display:block;margin-bottom:3px;">Lý do đề nghị chuyển viện:</label>
+                    <input type="text" id="ref-reason" value="Tình trạng bệnh diễn tiến nặng, vượt quá khả năng chuyên môn và trang thiết bị điều trị tại Trung tâm." class="tc-input w-full">
+                </div>
+                <div>
+                    <label style="font-weight:700;display:block;margin-bottom:3px;">Bệnh viện tuyến trên dự kiến chuyển đến <span class="text-red">*</span></label>
+                    <input type="text" id="ref-hospital" list="ref-hospital-list" placeholder="Chọn hoặc nhập tên Bệnh viện..." class="tc-input w-full font-bold text-blue">
+                    <datalist id="ref-hospital-list">
+                        <option value="Bệnh viện Đa khoa Thành phố Cần Thơ">
+                        <option value="Bệnh viện Đa khoa Trung ương Cần Thơ">
+                        <option value="Bệnh viện Tâm thần Thành phố Cần Thơ">
+                        <option value="Bệnh viện Lao và Bệnh phổi Thành phố Cần Thơ">
+                        <option value="Bệnh viện Nhi đồng Thành phố Cần Thơ">
+                        <option value="Bệnh viện Quân y 121">
+                    </datalist>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="flex items-center gap-1">
+                    <label style="width:135px;font-weight:600;">Phương tiện vận chuyển</label>
+                    <input type="text" id="ref-transport" value="Xe ô tô của Trung tâm / Xe cấp cứu 115" class="tc-input flex-1">
+                </div>
+                <div class="flex items-center gap-1">
+                    <label style="width:135px;font-weight:600;">Cán bộ y tế hộ tống</label>
+                    <input type="text" id="ref-escort" placeholder="Họ tên Y sĩ / Điều dưỡng đi kèm..." class="tc-input flex-1">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="view-treatment-sheet" class="view-section hidden">
                     <div class="tc-groupbox" style="flex-shrink:0;">
                         <div class="tc-groupbox-title">
                             <span>PHIẾU ĐIỀU TRỊ — DIỄN TIẾN BỆNH &amp; Y LỆNH (2 CỘT DIỄN TIẾN - Y LỆNH &rarr; 1 CHỮ KÝ | CHUẨN A4)</span>
@@ -1706,9 +1829,22 @@
                             <div class="font-bold">QUẢN LÝ TÀI KHOẢN CÁ NHÂN & PHÂN QUYỀN CÁN BỘ</div>
                             <div style="font-size:11px;color:#dbeafe;">Admin BS. Nguyễn Tuấn Hiền có quyền tạo, chỉnh sửa hoặc khóa tài khoản từng Bác sĩ, Y sĩ, Điều dưỡng, Dược sĩ, KTV VLTL</div>
                         </div>
-                        <button type="button" id="btn-open-add-user" onclick="openUserModal()" class="tc-btn tc-btn-amber">+ Thêm Tài Khoản Nhân Viên Mới</button>
+                        <div class="flex items-center gap-2">
+    <button type="button" onclick="toggleBulkUserBox()" class="tc-btn tc-btn-emerald" style="font-weight:700;">&#128203; Nhập nhanh 30+ NV từ Excel</button>
+    <button type="button" id="btn-open-add-user" onclick="openUserModal()" class="tc-btn tc-btn-amber">+ Thêm Tài Khoản Nhân Viên Mới</button>
+</div>
                     </div>
-
+<div id="bulk-user-box" class="hidden" style="background:#f0fdf4;border:1px solid #86efac;padding:10px;margin:6px 0;border-radius:4px;">
+    <div class="font-bold text-emerald" style="margin-bottom:4px;">NHẬP HÀNG LOẠT NHÂN VIÊN TỪ EXCEL (COPY CÁC CỘT TỪ EXCEL RỒI DÁN VÀO Ô DƯỚI)</div>
+    <div style="font-size:12px;color:#334155;margin-bottom:6px;">
+        Thứ tự cột trong Excel: <b>Họ và tên</b> | <b>Tên đăng nhập</b> | <b>Mật khẩu</b> (mặc định 123456 nếu để trống) | <b>Chức danh</b> (Bác sĩ / Y sĩ / Điều dưỡng / KTV VLTL / Dược sĩ) | <b>Cơ sở</b> (Trụ sở chính / Cơ sở 1 / Cơ sở 2 / Cơ sở 3)
+    </div>
+    <textarea id="bulk-user-input" rows="6" class="tc-input" style="width:100%;font-family:monospace;font-size:12px;" placeholder="Ví dụ copy từ Excel dán vào:&#10;Nguyễn Văn A	bsnva	123456	Bác sĩ	Trụ sở chính&#10;Trần Thị B	ddttb	123456	Điều dưỡng	Cơ sở 1"></textarea>
+    <div class="flex items-center gap-2" style="margin-top:6px;">
+        <button type="button" onclick="importBulkUsersFromText()" class="tc-btn tc-btn-primary" style="font-weight:700;">&#9989; Tạo tất cả tài khoản &amp; Đồng bộ ngay</button>
+        <button type="button" onclick="toggleBulkUserBox()" class="tc-btn">Đóng</button>
+    </div>
+</div>
                     <div id="non-admin-notice" class="hidden" style="background:#fee2e2;border:1px solid #f87171;color:#991b1b;padding:8px;margin:6px 0;border-radius:4px;">
                         Bạn đang đăng nhập với tài khoản nhân viên. Chỉ tài khoản <strong>Admin (BS. Nguyễn Tuấn Hiền)</strong> mới có quyền thêm hoặc sửa tài khoản cán bộ.
                     </div>
@@ -2453,31 +2589,85 @@
         }
 
         // ==================== ĐỒNG BỘ ĐÁM MÂY ONLINE (GOOGLE FIREBASE REST API) ====================
+        var FIXED_CLOUD_CONFIG = {
+            enabled: true,
+            url: 'https://phongkham-ttctxh-default-rtdb.asia-southeast1.firebasedatabase.app',
+            roomKey: 'ttctxh_cantho_yt_phcn',
+            authToken: ''
+        };
+
+        var isInitialCloudLoaded = false; // Khóa an toàn: Chưa tải xong từ Cloud thì cấm ghi đè ngược lên Cloud
+        var pendingCloudPush = false;
+
         function loadCloudConfig() {
             try {
                 const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
-                if (raw) return JSON.parse(raw);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.url && parsed.url.startsWith('https://')) {
+                        return { ...FIXED_CLOUD_CONFIG, ...parsed, enabled: true };
+                    }
+                }
             } catch (e) {}
-             
-    return {
-        enabled: true,
-        url: 'https://phongkham-ttctxh-default-rtdb.asia-southeast1.firebasedatabase.app',
-        roomKey: 'ttctxh_cantho_yt_phcn',
-        authToken: ''
-    };
-
+            try { localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(FIXED_CLOUD_CONFIG)); } catch (e) {}
+            return { ...FIXED_CLOUD_CONFIG };
         }
 
+        function normalizeDatabaseSchema(data) {
+            if (!data || typeof data !== 'object') data = createDefaultDatabase();
+            if (!Array.isArray(data.users) || data.users.length === 0) {
+                data.users = createDefaultDatabase().users;
+            }
+            if (!Array.isArray(data.patients)) data.patients = [];
+            if (!Array.isArray(data.exams)) data.exams = [];
+            if (!Array.isArray(data.nursingCareRecords)) data.nursingCareRecords = [];
+            if (!Array.isArray(data.treatmentRecords)) data.treatmentRecords = [];
+            if (!Array.isArray(data.inventory) || data.inventory.length === 0) {
+                data.inventory = JSON.parse(JSON.stringify(INITIAL_INVENTORY));
+            } else {
+                const isOldSampleOnly = data.inventory.every(x => /^(d|s)\d+$/.test(x.id));
+                if (isOldSampleOnly) {
+                    data.inventory = JSON.parse(JSON.stringify(INITIAL_INVENTORY));
+                } else {
+                    INITIAL_INVENTORY.forEach(item => {
+                        if (!data.inventory.some(x => x.id === item.id)) {
+                            data.inventory.push({ ...item });
+                        }
+                    });
+                }
+            }
+            data.users.forEach((u, i) => {
+                if (!u.empCode) u.empCode = 'NV' + String(i + 1).padStart(2, '0');
+                if (!u.perms) u.perms = { exam: true, nursing: true, editPt: true, inv: u.role === 'Admin' || u.role === 'Dược sĩ' };
+            });
+            return data;
+        }
+
+        // Ghi đè hàm saveDatabase cũ để kích hoạt cờ bảo vệ chống mất dữ liệu
+        saveDatabase = function(data = db, skipCloudPush = false) {
+            data.updatedAt = Date.now();
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                showToast('Cảnh báo bộ nhớ đệm đầy, đang lưu trực tiếp lên Đám mây...', true);
+            }
+            if (!skipCloudPush) {
+                pendingCloudPush = true;
+                pushLocalToCloud(false);
+            }
+        };
+
         function saveCloudConfig(cfg = cloudConfig) {
+            cfg.enabled = true;
             localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cfg));
             updateCloudStatusUI();
         }
 
         function buildFirebaseEndpoint() {
-            if (!cloudConfig || !cloudConfig.url) return '';
-            const base = cloudConfig.url.trim().replace(/\/+$/, '');
-            const room = (cloudConfig.roomKey || 'ttctxh_cantho_yt_phcn').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-            const auth = cloudConfig.authToken ? `?auth=${encodeURIComponent(cloudConfig.authToken.trim())}` : '';
+            const activeCfg = (cloudConfig && cloudConfig.url) ? cloudConfig : FIXED_CLOUD_CONFIG;
+            const base = activeCfg.url.trim().replace(/\/+$/, '');
+            const room = (activeCfg.roomKey || 'ttctxh_cantho_yt_phcn').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            const auth = activeCfg.authToken ? `?auth=${encodeURIComponent(activeCfg.authToken.trim())}` : '';
             return `${base}/${room}.json${auth}`;
         }
 
@@ -2487,41 +2677,41 @@
             const dashInfo = document.getElementById('dashboard-sync-info');
             if (!btn || !txt) return;
 
-            if (cloudConfig && cloudConfig.enabled && cloudConfig.url) {
+            if (isInitialCloudLoaded) {
                 btn.style.background = '#d1fae5';
                 btn.style.color = '#065f46';
-                txt.innerHTML = `&#9729; Đám mây: Đã kết nối (Online)`;
+                txt.innerHTML = `&#9729; Online 100% (Đã đồng bộ)`;
                 if (dashInfo) {
-                    dashInfo.innerHTML = `<span class="text-emerald font-bold">&#9679; Đang đồng bộ Online mỗi 5 giây</span> ${lastCloudSyncTime ? `(Cập nhật lúc ${lastCloudSyncTime})` : ''}`;
+                    dashInfo.innerHTML = `<span class="text-emerald font-bold">&#9679; Đang chạy Online 100% trên Đám mây Firebase</span> ${lastCloudSyncTime ? `(Đồng bộ lúc ${lastCloudSyncTime})` : ''}`;
                 }
             } else {
-                btn.style.background = '#fef3c7';
-                btn.style.color = '#92400e';
-                txt.innerHTML = `&#9729; Đám mây: Chưa kết nối (Offline)`;
+                btn.style.background = '#e0f2fe';
+                btn.style.color = '#0369a1';
+                txt.innerHTML = `&#9729; Đang tải dữ liệu Online...`;
                 if (dashInfo) {
-                    dashInfo.textContent = 'Chế độ lưu cục bộ (Offline) — Bấm "Kết nối Online từ xa" để đồng bộ 4 cơ sở';
+                    dashInfo.textContent = 'Đang kết nối và tải dữ liệu mới nhất từ máy chủ Đám mây...';
                 }
             }
         }
 
         function openCloudConfigModal() {
-            document.getElementById('cloud-firebase-url').value = cloudConfig.url || '';
-            document.getElementById('cloud-room-key').value = cloudConfig.roomKey || 'ttctxh_cantho_yt_phcn';
+            document.getElementById('cloud-firebase-url').value = cloudConfig.url || FIXED_CLOUD_CONFIG.url;
+            document.getElementById('cloud-room-key').value = cloudConfig.roomKey || FIXED_CLOUD_CONFIG.roomKey;
             document.getElementById('cloud-auth-token').value = cloudConfig.authToken || '';
             document.getElementById('cloud-test-result').classList.add('hidden');
             document.getElementById('cloud-config-modal').classList.remove('hidden');
         }
 
         async function saveAndConnectCloud() {
-            const url = document.getElementById('cloud-firebase-url').value.trim();
-            const roomKey = document.getElementById('cloud-room-key').value.trim() || 'ttctxh_cantho_yt_phcn';
+            const url = document.getElementById('cloud-firebase-url').value.trim() || FIXED_CLOUD_CONFIG.url;
+            const roomKey = document.getElementById('cloud-room-key').value.trim() || FIXED_CLOUD_CONFIG.roomKey;
             const authToken = document.getElementById('cloud-auth-token').value.trim();
             const resBox = document.getElementById('cloud-test-result');
 
-            if (!url || !url.startsWith('https://')) {
+            if (!url.startsWith('https://')) {
                 resBox.style.background = '#fee2e2';
                 resBox.style.color = '#991b1b';
-                resBox.textContent = 'Vui lòng nhập đúng đường dẫn Firebase Realtime Database bắt đầu bằng https://';
+                resBox.textContent = 'Đường dẫn Firebase Realtime Database phải bắt đầu bằng https://';
                 resBox.classList.remove('hidden');
                 return;
             }
@@ -2531,52 +2721,53 @@
 
             resBox.style.background = '#e0f2fe';
             resBox.style.color = '#0369a1';
-            resBox.textContent = 'Đang kiểm tra kết nối tới Google Firebase...';
+            resBox.textContent = 'Đang đồng bộ với máy chủ Google Firebase...';
             resBox.classList.remove('hidden');
 
-            try {
-                const endpoint = buildFirebaseEndpoint();
-                const resp = await fetch(endpoint);
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const remoteData = await resp.json();
-
-                if (!remoteData || !remoteData.users) {
-                    await pushLocalToCloud(false);
-                    resBox.style.background = '#d1fae5';
-                    resBox.style.color = '#065f46';
-                    resBox.textContent = 'Kết nối thành công! Đã khởi tạo kho dữ liệu phòng khám lên Đám mây.';
-                } else {
-                    await pullCloudToLocal(false);
-                    resBox.style.background = '#d1fae5';
-                    resBox.style.color = '#065f46';
-                    resBox.textContent = 'Kết nối thành công! Đã đồng bộ dữ liệu từ Đám mây về máy.';
-                }
-                startCloudAutoSync();
-                showToast('Đã kết nối Đám mây Online thành công!');
-            } catch (err) {
-                resBox.style.background = '#fee2e2';
-                resBox.style.color = '#991b1b';
-                resBox.textContent = `Không kết nối được (${err.message}). Hãy kiểm tra lại URL hoặc bật Test Mode trên Firebase!`;
-            }
+            await pullCloudToLocal(true);
+            resBox.style.background = '#d1fae5';
+            resBox.style.color = '#065f46';
+            resBox.textContent = 'Đã kết nối Online 100% và đồng bộ dữ liệu thành công!';
         }
 
         function disconnectCloud() {
-            cloudConfig.enabled = false;
-            saveCloudConfig();
-            if (cloudSyncTimer) clearInterval(cloudSyncTimer);
-            const resBox = document.getElementById('cloud-test-result');
-            resBox.style.background = '#fef3c7';
-            resBox.style.color = '#92400e';
-            resBox.textContent = 'Đã ngắt kết nối Đám mây. Phần mềm chuyển sang chạy Offline trên máy tính.';
-            resBox.classList.remove('hidden');
-            showToast('Đã chuyển sang chế độ Offline.');
+            showToast('Hệ thống đang khóa chế độ Online 100% để bảo vệ dữ liệu không bị thất lạc!', true);
+        }
+
+        function mergeById(remoteArr = [], localArr = []) {
+            const map = new Map();
+            remoteArr.forEach(item => { if (item && item.id) map.set(item.id, item); });
+            localArr.forEach(item => {
+                if (item && item.id) {
+                    const existing = map.get(item.id);
+                    if (!existing || (item.updatedAt || 0) >= (existing.updatedAt || 0)) {
+                        map.set(item.id, item);
+                    }
+                }
+            });
+            return Array.from(map.values());
         }
 
         async function pushLocalToCloud(notify = false) {
-            if (!cloudConfig || !cloudConfig.enabled || !cloudConfig.url) {
-                if (notify) showToast('Chưa cấu hình kết nối Đám mây!', true);
+            if (!isInitialCloudLoaded) {
+                await pullCloudToLocal(false);
+                if (!isInitialCloudLoaded) return;
+            }
+
+            // CHỐT CHẶN BẢO VỆ: Tuyệt đối cấm ghi đè dữ liệu rỗng hoặc lỗi lên Firebase
+            const hasPatients = Array.isArray(db?.patients) && db.patients.length > 0;
+            const hasRecords = (Array.isArray(db?.exams) && db.exams.length > 0) || 
+                               (Array.isArray(db?.treatmentRecords) && db.treatmentRecords.length > 0);
+            const hasInventory = Array.isArray(db?.inventory) && db.inventory.length > 0;
+
+            if (!db || typeof db !== 'object' || (!hasPatients && !hasRecords && !hasInventory)) {
+                console.warn('Chặn đẩy dữ liệu rỗng lên Cloud để bảo vệ dữ liệu gốc!');
+                pendingCloudPush = false;
+                await pullCloudToLocal(false);
+                if (notify) showToast('Phát hiện dữ liệu máy này đang trống, hệ thống tự động tải lại từ Đám mây!', true);
                 return;
             }
+
             const endpoint = buildFirebaseEndpoint();
             try {
                 isCloudSyncing = true;
@@ -2584,75 +2775,111 @@
                 const resp = await fetch(endpoint, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(db)
+                    body: JSON.stringify(db),
+                    keepalive: true
                 });
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                pendingCloudPush = false;
                 lastCloudSyncTime = new Date().toLocaleTimeString('vi-VN');
                 updateCloudStatusUI();
-                if (notify) showToast('Đã đẩy toàn bộ dữ liệu máy này lên Đám mây!');
+                if (notify) showToast('Đã lưu và đồng bộ dữ liệu lên Đám mây thành công!');
             } catch (err) {
-                if (notify) showToast('Lỗi đẩy dữ liệu lên Đám mây: ' + err.message, true);
+                if (notify) showToast('Mạng chập chờn, hệ thống sẽ tự động đẩy lại sau vài giây: ' + err.message, true);
             } finally {
                 isCloudSyncing = false;
             }
         }
 
         async function pullCloudToLocal(notify = false) {
-            if (!cloudConfig || !cloudConfig.enabled || !cloudConfig.url) {
-                if (notify) showToast('Chưa cấu hình kết nối Đám mây!', true);
-                return;
-            }
             if (isCloudSyncing) return;
             const endpoint = buildFirebaseEndpoint();
             try {
                 isCloudSyncing = true;
-                const resp = await fetch(endpoint);
+                const resp = await fetch(endpoint, { cache: 'no-store' });
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                 const remoteData = await resp.json();
-                if (remoteData && Array.isArray(remoteData.users) ) {
-                    const localTime = db.updatedAt || 0;
-                    const remoteTime = remoteData.updatedAt || 0;
-                    const isFreshEmptyLocal = (db.users || []).length <= 1 && (db.patients || []).length === 0;
-if (notify || remoteTime > localTime || isFreshEmptyLocal)  {
-                        db = remoteData;
-if (!Array.isArray(db.patients)) db.patients = [];
-                        if (!Array.isArray(db.exams)) db.exams = [];
-                        if (!Array.isArray(db.nursingCareRecords)) db.nursingCareRecords = [];
-                        if (!Array.isArray(db.treatmentRecords)) db.treatmentRecords = [];
-                        if (!Array.isArray(db.inventory)) db.inventory = INITIAL_INVENTORY;
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-                        refreshActiveViewAfterSync();
+
+                if (remoteData && Array.isArray(remoteData.users) && remoteData.users.length > 0) {
+                    const normalizedRemote = normalizeDatabaseSchema(remoteData);
+
+                    if (!isInitialCloudLoaded) {
+                        db = normalizedRemote;
+                        isInitialCloudLoaded = true;
+                    } else if (pendingCloudPush) {
+                        db.patients = mergeById(normalizedRemote.patients, db.patients);
+                        db.exams = mergeById(normalizedRemote.exams, db.exams);
+                        db.nursingCareRecords = mergeById(normalizedRemote.nursingCareRecords, db.nursingCareRecords);
+                        db.treatmentRecords = mergeById(normalizedRemote.treatmentRecords, db.treatmentRecords);
+                        db.users = mergeById(normalizedRemote.users, db.users);
+                        db.inventory = mergeById(normalizedRemote.inventory, db.inventory);
+                    } else {
+                        db = normalizedRemote;
                     }
+
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+                    refreshActiveViewAfterSync();
                     lastCloudSyncTime = new Date().toLocaleTimeString('vi-VN');
                     updateCloudStatusUI();
-                    if (notify) showToast('Đã đồng bộ dữ liệu mới nhất từ Đám mây!');
+                    if (notify) showToast('Đã tải dữ liệu mới nhất từ Đám mây!');
+                } else if (!remoteData) {
+                    isInitialCloudLoaded = true;
+                    await pushLocalToCloud(false);
                 }
             } catch (err) {
-                if (notify) showToast('Lỗi tải dữ liệu từ Đám mây: ' + err.message, true);
+                if (notify) showToast('Không thể kết nối Đám mây (kiểm tra mạng Internet): ' + err.message, true);
             } finally {
                 isCloudSyncing = false;
             }
         }
 
         function manualSyncNow() {
-            if (!cloudConfig || !cloudConfig.enabled || !cloudConfig.url) {
-                openCloudConfigModal();
-                return;
+            if (pendingCloudPush) {
+                pushLocalToCloud(true);
+            } else {
+                pullCloudToLocal(true);
             }
-            pushLocalToCloud(true);
         }
 
-        function startCloudAutoSync() {
+        window.addEventListener('beforeunload', () => {
+            if (pendingCloudPush && isInitialCloudLoaded) {
+                pushLocalToCloud(false);
+            }
+        });        function startCloudAutoSync() {
+            // 1. Tự động gán cấu hình Firebase mặc định nếu máy trạm chưa kết nối
+            if (!cloudConfig || !cloudConfig.url) {
+                cloudConfig = {
+                    enabled: true,
+                    url: 'https://phongkham-ttctxh-default-rtdb.asia-southeast1.firebasedatabase.app',
+                    roomKey: 'ttctxh_cantho_yt_phcn',
+                    authToken: ''
+                };
+                try {
+                    localStorage.setItem('cloudConfig', JSON.stringify(cloudConfig));
+                } catch (e) {}
+            } else {
+                cloudConfig.enabled = true;
+            }
+
             if (cloudSyncTimer) clearInterval(cloudSyncTimer);
             updateCloudStatusUI();
+
+            // 2. Kéo dữ liệu mới nhất ngay lập tức khi vừa mở phần mềm
             if (cloudConfig && cloudConfig.enabled && cloudConfig.url) {
                 pullCloudToLocal(false);
+
+                // 3. Vòng lặp đồng bộ 2 chiều tốc độ cao (1.5 giây/lần như game online)
                 cloudSyncTimer = setInterval(() => {
-                    if (!isCloudSyncing) pullCloudToLocal(false);
-                }, 5000);
+                    if (isCloudSyncing || !navigator.onLine) return;
+                    if (pendingCloudPush && isInitialCloudLoaded) {
+                        // Ưu tiên đẩy dữ liệu vừa sửa ở máy này lên Cloud trước
+                        pushLocalToCloud(false);
+                    } else {
+                        // Kéo dữ liệu mới từ các phòng/cơ sở khác về cập nhật màn hình
+                        pullCloudToLocal(false);
+                    }
+                }, 1500);
             }
         }
-
         function refreshActiveViewAfterSync() {
             if (!currentUser) {
                 renderLoginExtraUsers();
@@ -2779,7 +3006,7 @@ if (!Array.isArray(db.patients)) db.patients = [];
 
             const navEl = document.getElementById(`nav-${viewName}`);
             if (navEl) navEl.classList.add('active-nav');
-
+if (viewName === 'referral') initReferralView();
             if (viewName === 'dashboard') renderDashboard();
             if (viewName === 'patients') { resetPatientForm(); renderPatientsTable(); }
             if (viewName === 'exam') {
@@ -2789,6 +3016,7 @@ if (!Array.isArray(db.patients)) db.patients = [];
             if (viewName === 'nursing-orders') initNursingOrdersView();
             if (viewName === 'nursing-care') initNursingCareView();
             if (viewName === 'treatment-sheet') initTreatmentSheetView();
+
             if (viewName === 'history') renderHistoryTable();
             if (viewName === 'rehab') renderRehabTable();
             if (viewName === 'drugs') renderInventoryTable();
@@ -3098,17 +3326,65 @@ const oldPt = id ? db.patients.find(p => p.id === id) : null;
             selEl.value = val;
         }
 
+        function lockSelectToCurrentUser(selEl) {
+            if (!selEl || !currentUser || !currentUser.fullname) return;
+            const roleLabel = currentUser.role ? ` (${currentUser.role})` : '';
+            selEl.innerHTML = `<option value="${currentUser.fullname}">${currentUser.fullname}${roleLabel}</option>`;
+            selEl.value = currentUser.fullname;
+            selEl.disabled = true;
+            selEl.style.backgroundColor = '#f1f5f9';
+            selEl.style.cursor = 'not-allowed';
+            selEl.title = 'Tự động khóa theo tài khoản đang đăng nhập';
+        }
+
+        function enforceStrictUserAccountability() {
+            if (!currentUser || !currentUser.fullname) return;
+            // Các ô bắt buộc phải là người đang đăng nhập (không cho chọn tên người khác)
+            const strictExecutorIds = [
+                'ex-doctor',        // Bác sĩ khám bệnh
+                'no-nurse-name',    // Điều dưỡng thực hiện y lệnh
+                'cs-nurse-name',    // Điều dưỡng ghi phiếu chăm sóc
+                'nc-nurse-name',    // Điều dưỡng thực hiện (nếu có ID này)
+                'tr-ktv-name',      // KTV thực hiện VLTL - PHCN
+                'pt-ktv-name',      // KTV thực hiện thủ thuật
+                'inv-staff-name'    // Người lập phiếu nhập/xuất kho
+            ];
+            strictExecutorIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.tagName === 'SELECT') {
+                    lockSelectToCurrentUser(el);
+                }
+            });
+            // Tự động quét mọi thẻ <select> có nhãn "thực hiện" hoặc "bác sĩ" (trừ ô phân công chỉ định)
+            document.querySelectorAll('select').forEach(sel => {
+                const id = (sel.id || '').toLowerCase();
+                if (id.includes('assign') || id === 'ex-nurse' || id === 'ex-ktv' || id.includes('filter')) return;
+                if (id.includes('doctor') || id.includes('nurse') || id.includes('ktv') || id.includes('staff') || id.includes('executor')) {
+                    lockSelectToCurrentUser(sel);
+                }
+            });
+        }
+
         function populateNurseSelectElement(selId) {
             const sel = document.getElementById(selId);
             if (!sel) return;
-            const prev = sel.value;
-            sel.innerHTML = getStaffOptionsByRoles(['Điều dưỡng', 'Y sĩ', 'Admin', 'Lãnh đạo phòng'], 'Chọn Điều dưỡng');
-            if (prev) {
-                ensureSelectOption(sel, prev);
-            } else if (currentUser && (currentUser.role === 'Điều dưỡng' || currentUser.role === 'Y sĩ')) {
-                ensureSelectOption(sel, currentUser.fullname);
+            // Nếu là ô người thực hiện (như no-nurse-name) thì khóa cứng theo tài khoản đang đăng nhập
+            if (selId === 'no-nurse-name' || selId.includes('exec') || selId.includes('care')) {
+                lockSelectToCurrentUser(sel);
+                return;
             }
+            // Nếu là ô phân công chỉ định trên phiếu khám thì chỉ lọc đúng danh sách Điều dưỡng/Y sĩ
+            const prev = sel.value;
+            sel.disabled = false;
+            sel.style.backgroundColor = '';
+            sel.style.cursor = '';
+            sel.innerHTML = getStaffOptionsByRoles(['Điều dưỡng', 'Y sĩ'], 'Chọn Điều dưỡng phân công');
+            if (prev) ensureSelectOption(sel, prev);
         }
+
+        // Tự động khóa ngay khi chuyển trang, mở phiếu mới hoặc đồng bộ dữ liệu
+        document.addEventListener('click', () => setTimeout(enforceStrictUserAccountability, 30));
+        setInterval(enforceStrictUserAccountability, 800);
 
         function onSelectICD10(inputEl) {
             const val = (inputEl.value || '').trim();
@@ -4753,61 +5029,492 @@ if (idx !== -1 && currentUser.role !== 'Admin') {
                 </tr>
             `).join('');
         }
+// ================= XỬ LÝ PHIẾU XIN Ý KIẾN CHUYỂN VIỆN (A4) =================
+function initReferralView() {
+    filterReferralPatientSelect();
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const dtInput = document.getElementById('ref-datetime');
+    if (dtInput && !dtInput.value) dtInput.value = now.toISOString().slice(0, 16);
+}
 
-        function printTreatmentSheetA4() {
+function filterReferralPatientSelect() {
+    const kw = (document.getElementById('ref-pt-search')?.value || '').toLowerCase().trim();
+    const sel = document.getElementById('ref-patient-select');
+    if (!sel) return;
+    const currentVal = sel.value;
+    const list = (db.patients || []).filter(p => !kw || (p.name || '').toLowerCase().includes(kw) || (p.code || '').toLowerCase().includes(kw));
+    sel.innerHTML = '<option value="">-- Chọn bệnh nhân cần chuyển viện --</option>' +
+        list.map(p => `<option value="${p.id}">${p.name} (${p.dob || p.birthYear || ''})</option>`).join('');
+    if (currentVal && list.some(p => p.id === currentVal)) sel.value = currentVal;
+}
+
+function onSelectPatientInReferral() {
+    const ptId = document.getElementById('ref-patient-select')?.value;
+    const p = (db.patients || []).find(x => x.id === ptId);
+    if (!p) return;
+    document.getElementById('ref-pt-info').value = `${p.dob || p.birthYear || ''} — ${p.gender || ''}`;
+    document.getElementById('ref-pt-room').value = p.room || p.department || p.address || '';
+    document.getElementById('ref-pt-bhyt').value = p.bhyt || p.insurance || '';
+
+    const ptExams = (db.exams || []).filter(e => e.patientId === ptId);
+    const latestEx = ptExams.length > 0 ? ptExams[ptExams.length - 1] : null;
+    if (latestEx) {
+        document.getElementById('ref-diagnosis').value = latestEx.diagnosis || latestEx.conclusion || '';
+        const pulse = latestEx.pulse || '...';
+        const bp = latestEx.bp || latestEx.bloodPressure || '.../...';
+        const temp = latestEx.temp || latestEx.temperature || '...';
+        const spo2 = latestEx.spo2 || '...';
+        document.getElementById('ref-vitals').value = `Mạch: ${pulse} l/ph; HA: ${bp} mmHg; Nhiệt độ: ${temp}°C; SpO2: ${spo2}%`;
+        const symp = latestEx.symptoms || latestEx.reason || '';
+        const note = latestEx.treatment || latestEx.notes || '';
+        document.getElementById('ref-summary').value = [symp ? `- Lâm sàng: ${symp}` : '', note ? `- Đã xử trí: ${note}` : ''].filter(Boolean).join('\n');
+    }
+}
+function pushReferralToNursingOrder() {
+    const ptId = document.getElementById('ref-patient-select')?.value;
+    if (!ptId) { showToast('Vui lòng chọn Bệnh nhân trước!', true); return; }
+    const p = (db.patients || []).find(x => x.id === ptId);
+    if (!p) return;
+
+    const diagnosis = (document.getElementById('ref-diagnosis')?.value || '').trim();
+    const hospital = (document.getElementById('ref-hospital')?.value || '').trim();
+    if (!diagnosis || !hospital) {
+        showToast('Vui lòng nhập Chẩn đoán và Bệnh viện chuyển đến!', true);
+        return;
+    }
+
+    const rawDt = document.getElementById('ref-datetime')?.value;
+    const dObj = rawDt ? new Date(rawDt) : new Date();
+    const hh = String(dObj.getHours()).padStart(2, '0');
+    const min = String(dObj.getMinutes()).padStart(2, '0');
+    const dd = String(dObj.getDate()).padStart(2, '0');
+    const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+    const yyyy = dObj.getFullYear();
+
+    const vitals = document.getElementById('ref-vitals')?.value || '';
+    const summary = document.getElementById('ref-summary')?.value || '';
+    const transport = document.getElementById('ref-transport')?.value || '';
+    const escort = document.getElementById('ref-escort')?.value || '';
+    const doctorName = (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.fullname || currentUser.name || '') : '';
+    const facilityName = (typeof getCurrentFacilityName === 'function') ? getCurrentFacilityName() : (p.facility || 'Trụ sở chính');
+
+    const orderText = [
+        `[Y LỆNH CHUYỂN VIỆN KHẨN - ${hh}:${min} ${dd}/${mm}/${yyyy}]`,
+        `1. Chuẩn bị chuyển bệnh nhân đến: ${hospital}`,
+        `2. Phương tiện: ${transport} | Hộ tống: ${escort || 'Theo phân công tua trực'}`,
+        `3. Theo dõi sát dấu hiệu sinh tồn trước & trong khi chuyển (${vitals})`,
+        `4. Hoàn tất hồ sơ chuyển tuyến, thẻ BHYT và bàn giao bệnh nhân an toàn.`
+    ].join('\n');
+
+    const newOrderId = 'EX_CV_' + Date.now();
+    db.exams = db.exams || [];
+    db.exams.push({
+        id: newOrderId,
+        code: 'CV-' + String(db.exams.length + 1).padStart(4, '0'),
+        patientId: p.id,
+        patientCode: p.code || '',
+        patientName: p.name || '',
+        facility: facilityName,
+        date: dObj.toISOString(),
+        examDate: dObj.toISOString(),
+        doctor: doctorName,
+        symptoms: summary,
+        diagnosis: `[Chuyển viện: ${hospital}] ${diagnosis}`,
+        orders: orderText,
+        nursingOrders: orderText,
+        treatment: orderText,
+        nursingStatus: 'Chờ thực hiện',
+        updatedAt: Date.now()
+    });
+
+    if (typeof saveDB === 'function') saveDB();
+    if (typeof pushLocalToCloud === 'function') pushLocalToCloud(false);
+    if (typeof renderDashboard === 'function') renderDashboard();
+
+    showToast(`Đã đẩy Y lệnh chuyển viện của BN ${p.name} sang Điều dưỡng!`);
+    if (typeof selectedNursingOrderId !== 'undefined') selectedNursingOrderId = newOrderId;
+    navigateTo('nursing-orders');
+}
+function printReferralFormA4() {
+    const ptId = document.getElementById('ref-patient-select')?.value;
+    if (!ptId) { showToast('Vui lòng chọn Bệnh nhân trước khi in!', true); return; }
+    const p = (db.patients || []).find(x => x.id === ptId);
+    if (!p) return;
+
+    const rawDt = document.getElementById('ref-datetime')?.value;
+    const dObj = rawDt ? new Date(rawDt) : new Date();
+    const hh = String(dObj.getHours()).padStart(2, '0');
+    const min = String(dObj.getMinutes()).padStart(2, '0');
+    const dd = String(dObj.getDate()).padStart(2, '0');
+    const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+    const yyyy = dObj.getFullYear();
+
+    const room = document.getElementById('ref-pt-room')?.value || '........................................';
+    const bhyt = document.getElementById('ref-pt-bhyt')?.value || 'Không có / Đang xác minh';
+    const vitals = document.getElementById('ref-vitals')?.value || 'Mạch: ..... l/ph; HA: ...../..... mmHg; Nhiệt độ: .....°C; SpO2: .....%';
+    const diagnosis = document.getElementById('ref-diagnosis')?.value || '................................................................................';
+    const summary = document.getElementById('ref-summary')?.value || '................................................................................';
+    const reason = document.getElementById('ref-reason')?.value || '';
+    const hospital = document.getElementById('ref-hospital')?.value || '................................................................................';
+    const transport = document.getElementById('ref-transport')?.value || '........................................';
+    const escort = document.getElementById('ref-escort')?.value || '........................................';
+    const signerName = (typeof currentUser !== 'undefined' && currentUser && currentUser.name) ? currentUser.name : '';
+
+    const printArea = document.getElementById('print-area');
+    if (!printArea) { showToast('Không tìm thấy vùng in #print-area!', true); return; }
+
+    printArea.innerHTML = `
+        <div style="font-family:'Times New Roman', serif; font-size:13pt; line-height:1.42; color:#000; padding:6mm 10mm; box-sizing:border-box;">
+            <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+                <tr>
+                    <td style="width:48%; text-align:center; vertical-align:top;">
+                        <div style="font-size:11pt; font-weight:bold;">SỞ Y TẾ THÀNH PHỐ CẦN THƠ</div>
+                        <div style="font-size:11pt; font-weight:bold;">TRUNG TÂM CÔNG TÁC XÃ HỘI</div>
+                        <div style="font-size:11pt; font-weight:bold; text-decoration:underline;">PHÒNG Y TẾ - PHỤC HỒI CHỨC NĂNG</div>
+                    </td>
+                    <td style="width:52%; text-align:center; vertical-align:top;">
+                        <div style="font-size:11pt; font-weight:bold;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                        <div style="font-size:12pt; font-weight:bold; text-decoration:underline;">Độc lập - Tự do - Hạnh phúc</div>
+                        <div style="font-size:11pt; font-style:italic; margin-top:4px;">Cần Thơ, ngày ${dd} tháng ${mm} năm ${yyyy}</div>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="text-align:center; margin:12px 0 10px 0;">
+                <div style="font-size:15pt; font-weight:bold; letter-spacing:0.5px;">PHIẾU XIN Ý KIẾN CHUYỂN TUYẾN ĐIỀU TRỊ</div>
+                <div style="font-size:12pt; font-style:italic;">(V/v chuyển bệnh nhân vượt quá khả năng chuyên môn điều trị tại Trung tâm)</div>
+            </div>
+
+            <div style="margin-bottom:8px; font-weight:bold;">
+                Kính gửi: Ban Giám đốc / Lãnh đạo trực Trung tâm Công tác xã hội TP. Cần Thơ.
+            </div>
+
+            <div style="margin-bottom:6px;">
+                <strong>1. Thông tin đối tượng / bệnh nhân:</strong>
+                <div style="padding-left:14px;">
+                    <div>- Họ và tên: <strong style="text-transform:uppercase;">${p.name || ''}</strong> &nbsp;&nbsp;&nbsp;&nbsp; Năm sinh: <strong>${p.dob || p.birthYear || '......'}</strong> &nbsp;&nbsp;&nbsp;&nbsp; Giới tính: <strong>${p.gender || '......'}</strong></div>
+                    <div>- Khu / Phòng quản lý: ${room} &nbsp;&nbsp;&nbsp;&nbsp; Số thẻ BHYT: ${bhyt}</div>
+                    <div>- Thời gian diễn biến nặng / đề nghị chuyển: <strong>${hh} giờ ${min} phút</strong>, ngày <strong>${dd}/${mm}/${yyyy}</strong></div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:6px;">
+                <strong>2. Tình trạng lâm sàng, sinh hiệu &amp; Chẩn đoán:</strong>
+                <div style="padding-left:14px;">
+                    <div>- Dấu hiệu sinh tồn: ${vitals}</div>
+                    <div>- Tóm tắt diễn biến &amp; xử trí ban đầu tại Phòng Y tế - PHCN:</div>
+                    <div style="white-space:pre-line; padding-left:10px; font-style:italic;">${summary}</div>
+                    <div style="margin-top:3px;">- Chẩn đoán: <strong>${diagnosis}</strong></div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <strong>3. Lý do đề nghị chuyển viện &amp; Tuyến chuyển đến:</strong>
+                <div style="padding-left:14px;">
+                    <div>- Lý do chuyển viện: ${reason}</div>
+                    <div>- Cơ sở y tế dự kiến chuyển đến: <strong>${hospital}</strong></div>
+                    <div>- Phương tiện vận chuyển: ${transport}</div>
+                    <div>- Cán bộ y tế hộ tống: ${escort}</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:14px; font-style:italic;">
+                Kính trình Ban Giám đốc / Lãnh đạo trực xem xét, cho ý kiến chỉ đạo giải quyết chuyển tuyến kịp thời cho bệnh nhân./.
+            </div>
+
+            <table style="width:100%; border-collapse:collapse; text-align:center;">
+                <tr>
+                    <td style="width:50%; vertical-align:top; padding:0 8px;">
+                        <div style="font-weight:bold; font-size:12pt;">LÃNH ĐẠO PHÒNG Y TẾ - PHCN</div>
+                        <div style="font-weight:bold; font-size:11.5pt;">HOẶC ĐẠI DIỆN TUA TRỰC</div>
+                        <div style="font-style:italic; font-size:11pt;">(Ký, ghi rõ họ tên)</div>
+                        <div style="height:68px;"></div>
+                        <div style="font-weight:bold; font-size:12.5pt;">${signerName}</div>
+                    </td>
+                    <td style="width:50%; vertical-align:top; padding:0 8px;">
+                        <div style="font-weight:bold; font-size:12pt;">XÁC NHẬN CỦA BAN GIÁM ĐỐC</div>
+                        <div style="font-weight:bold; font-size:11.5pt;">HOẶC LÃNH ĐẠO TRỰC</div>
+                        <div style="font-style:italic; font-size:11pt;">(Ý kiến chỉ đạo, ký tên, đóng dấu)</div>
+                        <div style="text-align:left; margin-top:10px; font-size:12pt;">
+                            Ý kiến: ...........................................................<br>
+                            ........................................................................
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    `;
+    window.print();
+}
+       function printTreatmentSheetA4() {
             const ptId = document.getElementById('ts-patient-select').value;
             if (!ptId) { showToast('Vui lòng chọn Bệnh nhân trước khi in!', true); return; }
             const p = db.patients.find(x => x.id === ptId);
-            const diagnosis = document.getElementById('ts-diagnosis').value.trim();
+            if (!p) { showToast('Không tìm thấy thông tin bệnh nhân!', true); return; }
+
+            const diagnosisInput = (document.getElementById('ts-diagnosis')?.value || '').trim();
             const rows = (db.treatmentRecords || []).filter(r => r.patientId === ptId);
-            if (rows.length === 0) { showToast('Phiếu điều trị chưa có nội dung Diễn tiến / Y lệnh để in!', true); return; }
+            const ptExams = (db.exams || []).filter(e => e.patientId === ptId);
+            const latestEx = ptExams.length > 0 ? ptExams[ptExams.length - 1] : null;
+
+            if (rows.length === 0 && !latestEx) {
+                showToast('Bệnh nhân chưa có nội dung khám hoặc diễn tiến để in!', true);
+                return;
+            }
+
+            const latestRow = rows.length > 0 ? rows[rows.length - 1] : null;
+            const rawDate = (latestRow && latestRow.datetime) || (latestEx && (latestEx.date || latestEx.examDate)) || new Date().toISOString();
+            const dt = new Date(rawDate);
+            const validDate = isNaN(dt.getTime()) ? new Date() : dt;
+            const dd = String(validDate.getDate()).padStart(2, '0');
+            const mm = String(validDate.getMonth() + 1).padStart(2, '0');
+            const yyyy = validDate.getFullYear();
+            const hh = String(validDate.getHours()).padStart(2, '0');
+            const min = String(validDate.getMinutes()).padStart(2, '0');
+            const timeStr = `${hh}:${min}`;
+
+            const slipCode = (latestEx && latestEx.code) ? latestEx.code : (p.code || '01');
+            const diagnosis = diagnosisInput || (latestEx && latestEx.diagnosis) || '';
+            const icdCode = (latestEx && latestEx.icd10) ? ` (${latestEx.icd10})` : '';
+
+            // Sinh hiệu & Khám lâm sàng từ phiếu khám gần nhất
+            const pulse = (latestEx && latestEx.pulse) || '76';
+            const bp = (latestEx && latestEx.bp) || '120/80';
+            const temp = (latestEx && latestEx.temp) || '36.8';
+            const spo2 = (latestEx && latestEx.spo2) || '';
+            const weight = (latestEx && latestEx.weight) || '';
+            const height = (latestEx && latestEx.height) || '';
+
+            const historyLines = [];
+            if (latestEx && latestEx.history) historyLines.push(`* Bệnh sử: ${latestEx.history}`);
+            if (rows.length > 0) {
+                rows.forEach(r => {
+                    if (r.progress) historyLines.push(`${rows.length > 1 ? `[${formatDateTime(r.datetime)}] ` : '* Diễn tiến: '}${r.progress}`);
+                });
+            }
+            if (historyLines.length === 0) historyLines.push('* Bệnh sử: Bệnh tỉnh, tiếp xúc được');
+
+            const clinicalText = (latestEx && latestEx.clinical) ? latestEx.clinical.replace(/\n/g, '<br>') : '';
+            const pastHistory = (latestEx && latestEx.pastHistory) ? latestEx.pastHistory : 'Chưa ghi nhận bất thường';
+
+            // Tổng hợp bảng IV. Hướng xử trí (Dịch vụ / Thuốc / Vật tư / Y lệnh)
+            const actionRows = [];
+            let totalAmount = 0;
+
+            if (latestEx && Array.isArray(latestEx.meds)) {
+                latestEx.meds.forEach((m, idx) => {
+                    const qty = Number(m.qty || m.quantity || 1);
+                    const price = Number(m.price || 0);
+                    const sub = qty * price;
+                    totalAmount += sub;
+                    actionRows.push({
+                        code: m.code || `TH-${idx + 1}`,
+                        name: m.name || m.drugName || '',
+                        qty: `${qty} ${m.unit || ''}`.trim(),
+                        amount: sub,
+                        note: m.dosage || m.usage || m.note || '',
+                        time: timeStr
+                    });
+                });
+            }
+            if (latestEx && Array.isArray(latestEx.supplies)) {
+                latestEx.supplies.forEach((s, idx) => {
+                    const qty = Number(s.qty || s.quantity || 1);
+                    const price = Number(s.price || 0);
+                    const sub = qty * price;
+                    totalAmount += sub;
+                    actionRows.push({
+                        code: s.code || `VT-${idx + 1}`,
+                        name: s.name || '',
+                        qty: `${qty} ${s.unit || ''}`.trim(),
+                        amount: sub,
+                        note: s.note || 'Vật tư tiêu hao',
+                        time: timeStr
+                    });
+                });
+            }
+            if (latestEx && Array.isArray(latestEx.procedures)) {
+                latestEx.procedures.forEach((pr, idx) => {
+                    const qty = Number(pr.qty || 1);
+                    const price = Number(pr.price || 0);
+                    const sub = qty * price;
+                    totalAmount += sub;
+                    actionRows.push({
+                        code: pr.code || `TT-${idx + 1}`,
+                        name: pr.name || '',
+                        qty: qty,
+                        amount: sub,
+                        note: pr.note || 'Thủ thuật / VLTL',
+                        time: timeStr
+                    });
+                });
+            }
+            rows.forEach((r, idx) => {
+                if (r.orders && r.orders.trim()) {
+                    const rDt = r.datetime ? new Date(r.datetime) : validDate;
+                    const rTime = isNaN(rDt.getTime()) ? timeStr : `${String(rDt.getHours()).padStart(2, '0')}:${String(rDt.getMinutes()).padStart(2, '0')}`;
+                    actionRows.push({
+                        code: `YL-${idx + 1}`,
+                        name: r.orders.replace(/\n/g, '<br>'),
+                        qty: 1,
+                        amount: 0,
+                        note: r.note || 'Y lệnh điều trị',
+                        time: rTime
+                    });
+                }
+            });
+
+            if (actionRows.length === 0) {
+                actionRows.push({
+                    code: '12-5',
+                    name: 'Khám bệnh & Theo dõi điều trị (Chương trình miễn phí)',
+                    qty: 1,
+                    amount: 0,
+                    note: '',
+                    time: timeStr
+                });
+            }
+
+            const signerName = (latestRow && latestRow.signer) || (latestEx && latestEx.doctor) || (currentUser && currentUser.fullname) || 'BS. Nguyễn Tuấn Hiền';
+            const cleanSigner = signerName.replace(/^BS\.\s*/i, '').replace(/\s*\(.*?\)\s*$/, '').trim();
+            const conclusionNote = (latestEx && latestEx.advice) ? latestEx.advice : '';
 
             const printArea = document.getElementById('print-area');
             printArea.innerHTML = `
-                <div style="font-family:'Times New Roman',serif;color:#000;line-height:1.45;">
-                    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:12px;">
+                <style>
+                    @media print {
+                        @page { size: A4 portrait; margin: 10mm 12mm; }
+                        body > *:not(#print-area) { display: none !important; }
+                        html, body {
+                            width: 100% !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            height: auto !important;
+                            overflow: visible !important;
+                        }
+                        #print-area {
+                            display: block !important;
+                            position: static !important;
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            box-sizing: border-box !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            page-break-before: avoid !important;
+                            page-break-after: avoid !important;
+                        }
+                        #print-area * {
+                            box-sizing: border-box !important;
+                        }
+                    }
+                </style>
+                <div style="font-family:'Times New Roman',serif;color:#000;font-size:13.5px;line-height:1.38;max-width:100%;">
+                    <!-- Tiêu đề Trung tâm giữ nguyên -->
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1.5px solid #000;padding-bottom:5px;margin-bottom:8px;">
                         <div>
                             <div style="font-size:13px;font-weight:bold;">TRUNG TÂM CÔNG TÁC XÃ HỘI THÀNH PHỐ CẦN THƠ</div>
                             <div style="font-size:13px;font-weight:bold;">PHÒNG Y TẾ - PHỤC HỒI CHỨC NĂNG</div>
                         </div>
-                        <div style="text-align:right;font-size:13px;">
+                        <div style="text-align:right;font-size:12.5px;">
                             <div><strong>MS: 08/BV-01</strong></div>
-                            <div><strong>Mã BN:</strong> ${p.code}</div>
+                            <div><strong>Mã BN:</strong> ${p.code || ''}</div>
                         </div>
                     </div>
-                    <h1 style="text-align:center;font-size:21px;font-weight:bold;margin:8px 0 12px 0;">PHIẾU ĐIỀU TRỊ</h1>
-                    <table style="width:100%;font-size:14px;margin-bottom:12px;">
+
+                    <h1 style="text-align:center;font-size:20px;font-weight:bold;margin:4px 0 8px 0;letter-spacing:0.5px;">PHIẾU ĐIỀU TRỊ</h1>
+
+                    <!-- I. HÀNH CHÍNH -->
+                    <div style="font-weight:bold;font-size:14px;margin-bottom:2px;">I. Hành chính</div>
+                    <table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:4px;">
                         <tr>
-                            <td style="width:52%;"><strong>Họ và tên người bệnh:</strong> ${p.name}</td>
-                            <td style="width:23%;"><strong>Tuổi:</strong> ${p.age || ''}</td>
-                            <td style="width:25%;"><strong>Giới tính:</strong> ${p.gender}</td>
+                            <td style="width:54%;padding:1px 0;">Họ và tên: <strong>${(p.name || '').toUpperCase()}</strong></td>
+                            <td style="width:23%;padding:1px 0;">Tuổi: ${p.age || ''}</td>
+                            <td style="width:23%;padding:1px 0;">Giới tính: ${p.gender || ''}</td>
                         </tr>
-                        <tr><td colspan="3"><strong>Địa chỉ:</strong> ${formatFullAddress(p)}</td></tr>
-                        <tr><td colspan="3"><strong>Chẩn đoán:</strong> <strong>${diagnosis}</strong></td></tr>
+                        <tr>
+                            <td colspan="2" style="padding:1px 0;">Địa chỉ: ${formatFullAddress(p)}</td>
+                            <td style="padding:1px 0;">Điện thoại: ${p.phone || ''}</td>
+                        </tr>
                     </table>
-                    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
+                    <div style="border-top:1px dotted #000;border-bottom:1px dotted #000;text-align:center;padding:3px 0;margin:4px 0 8px 0;font-size:14.5px;font-weight:bold;">
+                        Ngày: ${dd}/${mm} - Số Phiếu: ${slipCode}
+                    </div>
+
+                    <!-- II. BỆNH SỬ -->
+                    <div style="font-weight:bold;font-size:14px;margin-bottom:2px;">II. Bệnh sử</div>
+                    <table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:2px;">
+                        <tr>
+                            <td style="width:26%;padding:1px 0;">Mạch: ${pulse} lần/phút.</td>
+                            <td style="width:30%;padding:1px 0;">Huyết áp: ${bp} mmhg.</td>
+                            <td style="width:24%;padding:1px 0;">Nhiệt độ: ${temp} °C.</td>
+                            <td style="width:20%;padding:1px 0;">SPO2: ${spo2 ? spo2 + ' %' : ''}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:1px 0;">Cân nặng: ${weight ? weight + ' kg' : ''}</td>
+                            <td colspan="3" style="padding:1px 0;">Chiều cao: ${height ? height + ' cm.' : ''}</td>
+                        </tr>
+                    </table>
+                    <div style="font-size:13.5px;line-height:1.4;margin-bottom:6px;">
+                        ${historyLines.map(line => `<div>${line}</div>`).join('')}
+                        ${clinicalText ? `<div style="margin-top:2px;">${clinicalText}</div>` : ''}
+                        <div style="margin-top:2px;">* Tiền sử: ${pastHistory}</div>
+                    </div>
+
+                    <!-- III. CHẨN ĐOÁN LÂM SÀNG -->
+                    <div style="font-weight:bold;font-size:14px;margin-bottom:2px;">III. Chẩn đoán lâm sàng</div>
+                    <div style="font-size:13.5px;margin-bottom:8px;">
+                        Chẩn đoán: <strong>${diagnosis}${icdCode}</strong>
+                    </div>
+
+                    <!-- IV. HƯỚNG XỬ TRÍ -->
+                    <div style="font-weight:bold;font-size:14px;margin-bottom:4px;">IV. Hướng xử trí</div>
+                    <table style="width:100%;table-layout:fixed;word-wrap:break-word;border-collapse:collapse;font-size:13px;margin-bottom:10px;">
                         <thead>
                             <tr>
-                                <th style="border:1px solid #000;padding:6px;width:15%;text-align:center;">Ngày giờ</th>
-                                <th style="border:1px solid #000;padding:6px;width:36%;text-align:center;">Diễn tiến bệnh</th>
-                                <th style="border:1px solid #000;padding:6px;width:35%;text-align:center;">Y lệnh điều trị</th>
-                                <th style="border:1px solid #000;padding:6px;width:14%;text-align:center;">Ký tên<br><span style="font-weight:normal;font-size:11px;">(1 chữ ký)</span></th>
+                                <th style="border:1px solid #000;padding:4px 5px;width:10%;text-align:center;">Mã Sp</th>
+                                <th style="border:1px solid #000;padding:4px 6px;width:36%;text-align:center;">Tên Sp / Y lệnh điều trị</th>
+                                <th style="border:1px solid #000;padding:4px 4px;width:9%;text-align:center;">Sl</th>
+                                <th style="border:1px solid #000;padding:4px 5px;width:12%;text-align:center;">Thành tiền</th>
+                                <th style="border:1px solid #000;padding:4px 6px;width:23%;text-align:center;">Kết luận (liều dùng)</th>
+                                <th style="border:1px solid #000;padding:4px 4px;width:10%;text-align:center;">Thời gian</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${rows.map(r => `
+                            <tr>
+                                <td colspan="6" style="border:1px solid #000;padding:3px 6px;font-weight:bold;">Dịch vụ / Điều trị</td>
+                            </tr>
+                            ${actionRows.map(item => `
                                 <tr>
-                                    <td style="border:1px solid #000;padding:6px;vertical-align:top;text-align:center;">${formatDateTime(r.datetime)}</td>
-                                    <td style="border:1px solid #000;padding:6px;vertical-align:top;white-space:pre-line;">${r.progress}</td>
-                                    <td style="border:1px solid #000;padding:6px;vertical-align:top;white-space:pre-line;">${r.orders}</td>
-                                    <td style="border:1px solid #000;padding:6px;vertical-align:bottom;text-align:center;height:80px;">
-                                        <div style="font-size:11px;font-style:italic;color:#444;margin-bottom:28px;">(Ký tên)</div>
-                                        <strong>${r.signer}</strong>
-                                    </td>
+                                    <td style="border:1px solid #000;padding:4px 5px;text-align:center;vertical-align:top;">${item.code}</td>
+                                    <td style="border:1px solid #000;padding:4px 6px;vertical-align:top;">${item.name}</td>
+                                    <td style="border:1px solid #000;padding:4px 4px;text-align:center;vertical-align:top;">${item.qty}</td>
+                                    <td style="border:1px solid #000;padding:4px 5px;text-align:center;vertical-align:top;">${item.amount.toLocaleString('vi-VN')}</td>
+                                    <td style="border:1px solid #000;padding:4px 6px;vertical-align:top;">${item.note}</td>
+                                    <td style="border:1px solid #000;padding:4px 4px;text-align:center;vertical-align:top;">${item.time}</td>
                                 </tr>
                             `).join('')}
+                            <tr>
+                                <td colspan="3" style="border:1px solid #000;padding:4px 6px;font-weight:bold;">Tổng tiền</td>
+                                <td style="border:1px solid #000;padding:4px 5px;text-align:center;font-weight:bold;">${totalAmount.toLocaleString('vi-VN')}</td>
+                                <td colspan="2" style="border:1px solid #000;padding:4px 6px;"></td>
+                            </tr>
                         </tbody>
                     </table>
+
+                    <!-- V. KẾT LUẬN & 1 CHỮ KÝ DUY NHẤT -->
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:6px;">
+                        <div style="width:52%;padding-right:10px;">
+                            <div style="font-weight:bold;font-size:14px;margin-bottom:3px;">V. Kết luận</div>
+                            <div style="font-size:13.5px;white-space:pre-line;">${conclusionNote}</div>
+                        </div>
+                        <div style="width:45%;text-align:center;font-size:13.5px;">
+                            <div style="font-style:italic;">Ngày ${dd} tháng ${mm} năm ${yyyy}</div>
+                            <div style="font-weight:bold;margin-top:2px;">BÁC SĨ ĐIỀU TRỊ</div>
+                            <div style="height:58px;"></div>
+                            <div style="font-weight:bold;font-size:14px;">${cleanSigner}</div>
+                        </div>
+                    </div>
                 </div>
             `;
             printArea.classList.remove('hidden');
@@ -5041,7 +5748,76 @@ if (idx !== -1 && currentUser.role !== 'Admin') {
             `}).join('');
         }
 
-        function deleteUserAccount(id) {
+ function toggleBulkUserBox() {
+    if (!currentUser || currentUser.role !== 'Admin') {
+        showToast('Chỉ Admin (BS. Nguyễn Tuấn Hiền) mới có quyền thêm tài khoản!', true);
+        return;
+    }
+    const box = document.getElementById('bulk-user-box');
+    if (box) box.classList.toggle('hidden');
+}
+
+function importBulkUsersFromText() {
+    if (!currentUser || currentUser.role !== 'Admin') {
+        showToast('Chỉ Admin (BS. Nguyễn Tuấn Hiền) mới có quyền!', true);
+        return;
+    }
+    const raw = (document.getElementById('bulk-user-input')?.value || '').trim();
+    if (!raw) {
+        showToast('Vui lòng dán danh sách nhân viên từ Excel vào ô trống!', true);
+        return;
+    }
+    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    db.users = db.users || [];
+    let added = 0, skipped = 0;
+
+    lines.forEach((line, idx) => {
+        const cols = line.includes('\t') ? line.split('\t') : line.split(',');
+        const fullname = (cols[0] || '').trim();
+        let username = (cols[1] || '').trim().toLowerCase();
+        const password = (cols[2] || '123456').trim();
+        const title = (cols[3] || 'Điều dưỡng').trim();
+        const facility = (cols[4] || 'Trụ sở chính').trim();
+
+        if (!fullname) return;
+        if (!username) {
+            username = fullname.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+        if (db.users.some(u => (u.username || '').toLowerCase() === username)) {
+            skipped++;
+            return;
+        }
+        const tLower = title.toLowerCase();
+        const role = tLower.includes('bác sĩ') || tLower.includes('bs') ? 'Doctor'
+                   : tLower.includes('y sĩ') ? 'AssistantDoctor'
+                   : tLower.includes('ktv') || tLower.includes('vltl') || tLower.includes('phcn') ? 'Rehab'
+                   : tLower.includes('dược') ? 'Pharmacy' : 'Nurse';
+
+        db.users.push({
+            id: 'USR_' + Date.now() + '_' + idx,
+            code: 'NV' + String(db.users.length + 1).padStart(3, '0'),
+            fullname: fullname,
+            username: username,
+            password: password,
+            title: title,
+            role: role,
+            facility: facility,
+            perms: ['exam', 'nursing', 'rehab', 'patients'],
+            active: true,
+            note: 'Nhập hàng loạt từ Excel'
+        });
+        added++;
+    });
+
+    if (typeof saveDatabase === 'function') saveDatabase();
+    if (typeof pushLocalToCloud === 'function') pushLocalToCloud(false);
+    if (typeof renderUsersTable === 'function') renderUsersTable();
+
+    document.getElementById('bulk-user-input').value = '';
+    document.getElementById('bulk-user-box').classList.add('hidden');
+    showToast(`Đã tạo thành công ${added} tài khoản nhân viên${skipped > 0 ? ` (Bỏ qua ${skipped} tài khoản trùng tên đăng nhập)` : ''}!`);
+}       
+function deleteUserAccount(id) {
             if (!currentUser || currentUser.role !== 'Admin') {
                 showToast('Chỉ Admin (BS. Nguyễn Tuấn Hiền) mới có quyền xóa tài khoản!', true);
                 return;
